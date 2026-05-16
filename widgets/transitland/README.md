@@ -134,7 +134,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
       {{ $agency := "" }}
       {{ $filteredRouteName := "" }}
       {{ $alertTooltip := "" }}
-      {{ $alertColor := "#ff9900" }}{{/* warning orange — Glance has no native warning color, kept as a fixed amber that reads on both light and dark themes */}}
+      {{ $alertColor := "#ff9900" }}
       {{ $dir0Headsign := "" }}
       {{ $dir1Headsign := "" }}
       {{ $dir0NextIso := "" }}
@@ -278,7 +278,7 @@ Santa Cruz METRO
 
 - **Widget shows nothing for a parent station** — Confirm by querying the API: if the parent's `departures[]` is empty but `children[]` contains stops with `departures`, the widget should already be walking them. If you see no children either, you may have the wrong Onestop ID.
 - **Both directions appear under the wrong headsign** — `direction_id` 0 vs 1 has no inherent meaning in GTFS; it's whatever the agency chose. The headsign labels are taken from the first matching departure in each direction, so they should always read correctly even if the underlying ID is "swapped" relative to other agencies.
-- **Real-time countdown is dim even though the agency has GTFS-RT** — The widget treats a departure as real-time only when `estimated_utc != scheduled_utc`. Verified-on-time buses look identical to scheduled-only ones in the API, so they appear as scheduled. Acceptable trade-off — under-claiming RT is honest.
+- **Real-time countdown is dim even though the agency has GTFS-RT** — The widget treats a departure as real-time only when `estimated_utc != scheduled_utc`. Verified-on-time buses look identical to scheduled-only ones in the API, so they appear as scheduled.
 - **`context deadline exceeded (Client.Timeout exceeded while awaiting headers)`** — Transitland's response for parent stations with many children + alerts can take 2–4s. The widget config sets `request-timeout: 10s` to handle this; if you still see timeouts, bump it higher (`30s`).
 
 ## Glance compatibility
