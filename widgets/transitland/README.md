@@ -22,7 +22,7 @@ For parent stations with multiple child platforms (BART, NYC subway, etc.) order
 
 ### Service alert active
 
-A `!` badge appears next to the stop name (orange for `DETOUR`/`MODIFIED_SERVICE`, red for `NO_SERVICE`/`SIGNIFICANT_DELAYS`). Hover for the full alert description.
+A `!` badge appears next to the stop name (`var(--color-primary)` for `DETOUR`/`MODIFIED_SERVICE`, `var(--color-negative)` for `NO_SERVICE`/`SIGNIFICANT_DELAYS`). Hover for the full alert description.
 
 <img src='./preview-servicealert.png' alt='Widget with a service alert badge in the header' width="200"/>
 
@@ -86,7 +86,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
         <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
           <span class="size-h6" style="background:{{ safeCSS $rcStyle }}; color:{{ safeCSS $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
           <div style="min-width: 0; flex-grow: 1;">
-            <div class="size-h5 text-truncate" {{ if $canceled }}style="text-decoration: line-through;"{{ end }}>{{ $headsign }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}</div>
+            <div class="size-h5 text-truncate" {{ if $canceled }}style="text-decoration: line-through;"{{ end }}>{{ $headsign }}{{ if $added }} <span class="size-h6 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}</div>
             {{ if and (ne $rl "") (ne $rl $headsign) }}<div class="size-h6 color-subdue text-truncate">{{ $rl }}</div>{{ end }}
             <div class="size-h6 text-truncate" style="white-space: nowrap;">
               {{ if $canceled }}<span class="color-negative" style="font-weight: 600;">CANCELED</span><span class="color-subdue"> · </span><span class="color-subdue" style="text-decoration: line-through;">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>
@@ -104,7 +104,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
           <span class="size-h6" style="background:{{ safeCSS $rcStyle }}; color:{{ safeCSS $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
           <div class="size-h5 text-truncate" style="min-width: 0; flex-grow: 1; white-space: nowrap;">
             {{ if $canceled }}<span class="color-negative" style="font-weight: 600;">CANCELED</span><span class="color-subdue"> · </span><span class="color-subdue" style="text-decoration: line-through;">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>
-            {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := absInt $delay }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}
+            {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := absInt $delay }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}{{ if $added }} <span class="size-h6 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}
           </div>
         </div>
       </li>
@@ -117,7 +117,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
       {{ $agency := "" }}
       {{ $filteredRouteName := "" }}
       {{ $alertTooltip := "" }}
-      {{ $alertColor := "#ff9900" }}
+      {{ $alertColor := "var(--color-primary)" }}
       {{ $dir0Headsign := "" }}
       {{ $dir1Headsign := "" }}
       {{ $dir0NextIso := "" }}
@@ -142,7 +142,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
       <div class="margin-bottom-10" style="min-width: 0;">
         <div class="flex items-center gap-10" style="min-width: 0;">
           {{ if ne $alertTooltip "" }}
-            <span style="background: {{ safeCSS $alertColor }}; color: white; border-radius: 50%; width: 1.15rem; height: 1.15rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; cursor: help;" title="{{ $alertTooltip }}">!</span>
+            <span style="background: {{ safeCSS $alertColor }}; color: var(--color-widget-background); border-radius: 50%; width: 1.15rem; height: 1.15rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; cursor: help;" title="{{ $alertTooltip }}">!</span>
           {{ end }}
           <div class="size-h3 text-truncate">{{ $stopName }}</div>
         </div>
@@ -246,7 +246,7 @@ Santa Cruz METRO
 - **Subdued countdown** = scheduled-only (no real-time signal for this trip)
 - **Red `+Nm`** = running late
 - **Green `-Nm` / `on time`** = running early or on schedule
-- **`!` badge in the header** = service alert; hover for the full description (`var(--color-negative)` for severe effects, amber otherwise)
+- **`!` badge in the header** = service alert; hover for the full description (`var(--color-negative)` for severe effects, `var(--color-primary)` otherwise)
 - **`+ ADDED` tag** = ad-hoc trip not on the static schedule
 - **Strikethrough row** = `CANCELED` trip (kept visible so you don't think the *next* train is the one being skipped)
 
