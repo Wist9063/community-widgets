@@ -12,7 +12,7 @@ Both directions appear in their own sub-list with a `→ destination` header. Ea
 
 <img src='./preview.png' alt='Widget filtered to one line, showing both directions split into sub-lists' width="200"/>
 
-### Unfiltered — multiple routes at one stop
+### Unfiltered - multiple routes at one stop
 
 Each (route, direction) combination gets up to 2 rows showing its soonest departures (tweakable via `$perRouteCap` in the template). Within a single platform, sorted by next departure. 
 
@@ -28,13 +28,13 @@ A `!` badge appears next to the stop name (orange for `DETOUR`/`MODIFIED_SERVICE
 
 Features:
 
-- **Real-time delays** — `+2m late`, `-1m early`, or `on time`, alongside scheduled clock time and a live countdown
-- **Multi-platform stations** — automatically walks `children[]` so parent stops like BART's Embarcadero or NYC subway hubs work without picking a specific platform ID
-- **Direction split** — when filtered to one route, splits into "→ destination A" / "→ destination B" sub-lists, each with its own collapsible "Show more"; the direction with the sooner next train always renders on top
-- **Dedupe across routes** — when no route filter is set, shows up to 2 departures per (route, direction) so a frequent line doesn't crowd out infrequent ones
-- **Service alerts** — surfaces as a `!` badge in the header with the full alert description on hover
-- **Cancellations & added trips** — strikethrough for `CANCELED`, `+ ADDED` tag for ad-hoc trips
-- **Theme-aware colors** — uses Glance's CSS variables, looks right in light and dark themes
+- **Real-time delays** - `+2m late`, `-1m early`, or `on time`, alongside scheduled clock time and a live countdown
+- **Multi-platform stations** - automatically walks `children[]` so parent stops like BART's Embarcadero or NYC subway hubs work without picking a specific platform ID
+- **Direction split** - when filtered to one route, splits into "→ destination A" / "→ destination B" sub-lists, each with its own collapsible "Show more"; the direction with the sooner next train always renders on top
+- **Dedupe across routes** - when no route filter is set, shows up to 2 departures per (route, direction) so a frequent line doesn't crowd out infrequent ones
+- **Service alerts** - surfaces as a `!` badge in the header with the full alert description on hover
+- **Cancellations & added trips** - strikethrough for `CANCELED`, `+ ADDED` tag for ad-hoc trips
+- **Theme-aware colors** - uses Glance's CSS variables, looks right in light and dark themes
 
 ## Prerequisites
 
@@ -49,7 +49,7 @@ A third variable is optional:
 
 ## Configuration
 
-### 1. Get an API key
+### 1. Get an free API key
 
 Sign up at <https://www.transit.land/operators> and click **API access**. You'll get a long token, paste it into your `.env` as `TRANSITLAND_API_KEY`.
 
@@ -70,7 +70,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
 ```yaml
 - type: custom-api
   title: Departures
-  cache: 30s
+  cache: 1m
   url: https://transit.land/api/v2/rest/stops/${TRANSITLAND_STOP_KEY}/departures
   parameters:
     next: 3600
@@ -78,36 +78,19 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
     include_alerts: true
   headers:
     apikey: ${TRANSITLAND_API_KEY}
-  request-timeout: 10s
   template: |
     {{ define "depRow" }}
       {{ $est := .String "departure.estimated_utc" }}{{ $sched := .String "departure.scheduled_utc" }}{{ $estLocal := .String "departure.estimated_local" }}{{ $schedLocal := .String "departure.scheduled_local" }}{{ $isRT := and (ne $est "") (ne $est $sched) }}{{ $iso := $sched }}{{ $isoLocal := $schedLocal }}{{ if $isRT }}{{ $iso = $est }}{{ $isoLocal = $estLocal }}{{ end }}
-      {{ $rs := .String "trip.route.route_short_name" }}{{ $rl := .String "trip.route.route_long_name" }}{{ $headsign := .String "trip.trip_headsign" }}{{ if eq $headsign "" }}{{ $headsign = .String "stop_headsign" }}{{ end }}{{ if eq $headsign "" }}{{ $headsign = $rl }}{{ end }}{{ $rc := .String "trip.route.route_color" }}{{ $rtc := .String "trip.route.route_text_color" }}{{ $rcStyle := "var(--color-text-subdue)" }}{{ if ne $rc "" }}{{ $rcStyle = print "#" $rc }}{{ end }}{{ $rtcStyle := "var(--color-widget-background)" }}{{ if ne $rtc "" }}{{ $rtcStyle = print "#" $rtc }}{{ end }}{{ $relation := .String "schedule_relationship" }}{{ $canceled := eq $relation "CANCELED" }}{{ $added := eq $relation "ADDED" }}
+      {{ $rs := .String "trip.route.route_short_name" }}{{ $rl := .String "trip.route.route_long_name" }}{{ $headsign := .String "trip.trip_headsign" }}{{ if eq $headsign "" }}{{ $headsign = .String "stop_headsign" }}{{ end }}{{ if eq $headsign "" }}{{ $headsign = $rl }}{{ end }}{{ $rc := findMatch "^[0-9A-Fa-f]{6}$" (.String "trip.route.route_color") }}{{ $rtc := findMatch "^[0-9A-Fa-f]{6}$" (.String "trip.route.route_text_color") }}{{ $rcStyle := "var(--color-text-subdue)" }}{{ if ne $rc "" }}{{ $rcStyle = print "#" $rc }}{{ end }}{{ $rtcStyle := "var(--color-widget-background)" }}{{ if ne $rtc "" }}{{ $rtcStyle = print "#" $rtc }}{{ end }}{{ $relation := .String "schedule_relationship" }}{{ $canceled := eq $relation "CANCELED" }}{{ $added := eq $relation "ADDED" }}
       <li {{ if $canceled }}style="opacity: 0.6;"{{ end }}>
         <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
-          <span class="size-h6" style="background:{{ $rcStyle }}; color:{{ $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
+          <span class="size-h6" style="background:{{ safeCSS $rcStyle }}; color:{{ safeCSS $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
           <div style="min-width: 0; flex-grow: 1;">
             <div class="size-h5 text-truncate" {{ if $canceled }}style="text-decoration: line-through;"{{ end }}>{{ $headsign }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}</div>
             {{ if and (ne $rl "") (ne $rl $headsign) }}<div class="size-h6 color-subdue text-truncate">{{ $rl }}</div>{{ end }}
             <div class="size-h6 text-truncate" style="white-space: nowrap;">
               {{ if $canceled }}<span class="color-negative" style="font-weight: 600;">CANCELED</span><span class="color-subdue"> · </span><span class="color-subdue" style="text-decoration: line-through;">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>
-              {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := $delay }}{{ if lt $delay 0 }}{{ $absDelay = sub 0 $delay }}{{ end }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}
-            </div>
-          </div>
-        </div>
-      </li>
-    {{ end }}
-    {{ define "depRowMinimal" }}
-      {{ $est := .String "departure.estimated_utc" }}{{ $sched := .String "departure.scheduled_utc" }}{{ $estLocal := .String "departure.estimated_local" }}{{ $schedLocal := .String "departure.scheduled_local" }}{{ $isRT := and (ne $est "") (ne $est $sched) }}{{ $iso := $sched }}{{ $isoLocal := $schedLocal }}{{ if $isRT }}{{ $iso = $est }}{{ $isoLocal = $estLocal }}{{ end }}
-      {{ $rs := .String "trip.route.route_short_name" }}{{ $headsign := .String "trip.trip_headsign" }}{{ if eq $headsign "" }}{{ $headsign = .String "stop_headsign" }}{{ end }}{{ if eq $headsign "" }}{{ $headsign = .String "trip.route.route_long_name" }}{{ end }}{{ $rc := .String "trip.route.route_color" }}{{ $rtc := .String "trip.route.route_text_color" }}{{ $rcStyle := "var(--color-text-subdue)" }}{{ if ne $rc "" }}{{ $rcStyle = print "#" $rc }}{{ end }}{{ $rtcStyle := "var(--color-widget-background)" }}{{ if ne $rtc "" }}{{ $rtcStyle = print "#" $rtc }}{{ end }}{{ $relation := .String "schedule_relationship" }}{{ $canceled := eq $relation "CANCELED" }}{{ $added := eq $relation "ADDED" }}
-      <li {{ if $canceled }}style="opacity: 0.6;"{{ end }}>
-        <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
-          <span class="size-h6" style="background:{{ $rcStyle }}; color:{{ $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
-          <div style="min-width: 0; flex-grow: 1;">
-            <div class="size-h5 text-truncate" {{ if $canceled }}style="text-decoration: line-through;"{{ end }}>{{ $headsign }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}</div>
-            <div class="size-h6 text-truncate" style="white-space: nowrap;">
-              {{ if $canceled }}<span class="color-negative" style="font-weight: 600;">CANCELED</span><span class="color-subdue"> · </span><span class="color-subdue" style="text-decoration: line-through;">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>
-              {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := $delay }}{{ if lt $delay 0 }}{{ $absDelay = sub 0 $delay }}{{ end }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}
+              {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := absInt $delay }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}
             </div>
           </div>
         </div>
@@ -115,13 +98,13 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
     {{ end }}
     {{ define "depRowJustTime" }}
       {{ $est := .String "departure.estimated_utc" }}{{ $sched := .String "departure.scheduled_utc" }}{{ $estLocal := .String "departure.estimated_local" }}{{ $schedLocal := .String "departure.scheduled_local" }}{{ $isRT := and (ne $est "") (ne $est $sched) }}{{ $iso := $sched }}{{ $isoLocal := $schedLocal }}{{ if $isRT }}{{ $iso = $est }}{{ $isoLocal = $estLocal }}{{ end }}
-      {{ $rs := .String "trip.route.route_short_name" }}{{ $rc := .String "trip.route.route_color" }}{{ $rtc := .String "trip.route.route_text_color" }}{{ $rcStyle := "var(--color-text-subdue)" }}{{ if ne $rc "" }}{{ $rcStyle = print "#" $rc }}{{ end }}{{ $rtcStyle := "var(--color-widget-background)" }}{{ if ne $rtc "" }}{{ $rtcStyle = print "#" $rtc }}{{ end }}{{ $relation := .String "schedule_relationship" }}{{ $canceled := eq $relation "CANCELED" }}{{ $added := eq $relation "ADDED" }}
+      {{ $rs := .String "trip.route.route_short_name" }}{{ $rc := findMatch "^[0-9A-Fa-f]{6}$" (.String "trip.route.route_color") }}{{ $rtc := findMatch "^[0-9A-Fa-f]{6}$" (.String "trip.route.route_text_color") }}{{ $rcStyle := "var(--color-text-subdue)" }}{{ if ne $rc "" }}{{ $rcStyle = print "#" $rc }}{{ end }}{{ $rtcStyle := "var(--color-widget-background)" }}{{ if ne $rtc "" }}{{ $rtcStyle = print "#" $rtc }}{{ end }}{{ $relation := .String "schedule_relationship" }}{{ $canceled := eq $relation "CANCELED" }}{{ $added := eq $relation "ADDED" }}
       <li {{ if $canceled }}style="opacity: 0.6;"{{ end }}>
         <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0;">
-          <span class="size-h6" style="background:{{ $rcStyle }}; color:{{ $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
+          <span class="size-h6" style="background:{{ safeCSS $rcStyle }}; color:{{ safeCSS $rtcStyle }}; border-radius:3px; font-weight:600; min-width: 2rem; height: 1.4rem; padding: 0 5px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">{{ $rs }}</span>
           <div class="size-h5 text-truncate" style="min-width: 0; flex-grow: 1; white-space: nowrap;">
             {{ if $canceled }}<span class="color-negative" style="font-weight: 600;">CANCELED</span><span class="color-subdue"> · </span><span class="color-subdue" style="text-decoration: line-through;">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>
-            {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := $delay }}{{ if lt $delay 0 }}{{ $absDelay = sub 0 $delay }}{{ end }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}
+            {{ else }}<span class="{{ if $isRT }}color-positive{{ else }}color-subdue{{ end }}" {{ $iso | parseTime "rfc3339" | toRelativeTime }}></span><span class="color-subdue"> · </span><span class="color-subdue">{{ $isoLocal | parseTime "rfc3339" | formatTime "3:04pm" }}</span>{{ if $isRT }}{{ $delay := .Int "departure.estimated_delay" }}{{ $absDelay := absInt $delay }}{{ if le $absDelay 30 }}<span class="color-subdue"> · </span><span class="color-positive">on time</span>{{ else }}{{ $mins := div (add $absDelay 30) 60 }}{{ if gt $delay 0 }}<span class="color-subdue"> · </span><span class="color-negative">+{{ $mins }}m</span>{{ else }}<span class="color-subdue"> · </span><span class="color-positive">-{{ $mins }}m</span>{{ end }}{{ end }}{{ end }}{{ end }}{{ if $added }} <span class="size-h7 color-positive" style="font-weight: 600; padding-left: 4px;">+ ADDED</span>{{ end }}
           </div>
         </div>
       </li>
@@ -159,7 +142,7 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
       <div class="margin-bottom-10" style="min-width: 0;">
         <div class="flex items-center gap-10" style="min-width: 0;">
           {{ if ne $alertTooltip "" }}
-            <span style="background: {{ $alertColor }}; color: white; border-radius: 50%; width: 1.15rem; height: 1.15rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; cursor: help;" title="{{ $alertTooltip }}">!</span>
+            <span style="background: {{ safeCSS $alertColor }}; color: white; border-radius: 50%; width: 1.15rem; height: 1.15rem; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0; cursor: help;" title="{{ $alertTooltip }}">!</span>
           {{ end }}
           <div class="size-h3 text-truncate">{{ $stopName }}</div>
         </div>
@@ -197,10 +180,10 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
             <div style="order: {{ $dir0Order }};">
               <div class="size-h5 text-truncate" style="margin-top: {{ if eq $dir0Order 1 }}0.5rem{{ else }}0.4rem{{ end }}; margin-bottom: 0.35rem;"><span class="color-primary">→</span> {{ $dir0Headsign }}</div>
               <ul class="list list-gap-10 collapsible-container" data-collapse-after="2">
-                {{ range $stop.Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 0)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir0Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}{{ end }}
               </ul>
             </div>
           {{ end }}
@@ -208,10 +191,10 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
             <div style="order: {{ $dir1Order }};">
               <div class="size-h5 text-truncate" style="margin-top: {{ if eq $dir1Order 1 }}0.5rem{{ else }}0.4rem{{ end }}; margin-bottom: 0.35rem;"><span class="color-primary">→</span> {{ $dir1Headsign }}</div>
               <ul class="list list-gap-10 collapsible-container" data-collapse-after="2">
-                {{ range $stop.Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}
-                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRowMinimal" . }}{{ end }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.estimated_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (ne (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}
+                {{ range $stop.Array "children" }}{{ range .Array "departures" | sortByString "departure.scheduled_utc" "asc" }}{{ if and (and (eq (.String "trip.route.onestop_id") $routeFilter) (eq (.Int "trip.direction_id") 1)) (eq (.String "departure.estimated_utc") "") }}{{ $any = true }}{{ $depHs := .String "trip.trip_headsign" }}{{ if eq $depHs "" }}{{ $depHs = .String "stop_headsign" }}{{ end }}{{ if eq $depHs $dir1Headsign }}{{ template "depRowJustTime" . }}{{ else }}{{ template "depRow" . }}{{ end }}{{ end }}{{ end }}{{ end }}
               </ul>
             </div>
           {{ end }}
@@ -237,7 +220,8 @@ JUDAH                                           ← route long name (only when f
 → Caltrain/Ballpark                             ← second direction
 [N]  in 14m · 9:23pm · on time
 [N]  in 17m · 9:26pm · +2m
-[N]  Third St & 23rd St                         ← short-turn — headsign shown when it differs from the direction sub-header
+[N]  Third St & 23rd St                         ← short-turn, headsign shown when it differs from the direction sub-header
+     JUDAH                                      ← route long name, shown when it differs from the headsign
      in 32m · 9:41pm · +1m
 ```
 
@@ -268,7 +252,7 @@ Santa Cruz METRO
 
 ## Troubleshooting
 
-- **"No upcoming departures"** — Check that `TRANSITLAND_API_KEY` is valid and the stop's Onestop ID is correct. Test from inside the container:
+- **"No upcoming departures"** - Check that `TRANSITLAND_API_KEY` is valid and the stop's Onestop ID is correct. Test from inside the container:
 
   ```bash
   docker compose exec glance wget -qO- \
@@ -276,11 +260,11 @@ Santa Cruz METRO
     "https://transit.land/api/v2/rest/stops/$TRANSITLAND_STOP_KEY/departures?next=3600&limit=5" | head -c 500
   ```
 
-- **Widget shows nothing for a parent station** — Confirm by querying the API: if the parent's `departures[]` is empty but `children[]` contains stops with `departures`, the widget should already be walking them. If you see no children either, you may have the wrong Onestop ID.
-- **Both directions appear under the wrong headsign** — `direction_id` 0 vs 1 has no inherent meaning in GTFS; it's whatever the agency chose. The headsign labels are taken from the first matching departure in each direction, so they should always read correctly even if the underlying ID is "swapped" relative to other agencies.
-- **Real-time countdown is dim even though the agency has GTFS-RT** — The widget treats a departure as real-time only when `estimated_utc != scheduled_utc`. Verified-on-time buses look identical to scheduled-only ones in the API, so they appear as scheduled.
-- **`context deadline exceeded (Client.Timeout exceeded while awaiting headers)`** — Transitland's response for parent stations with many children + alerts can take 2–4s. The widget config sets `request-timeout: 10s` to handle this; if you still see timeouts, bump it higher (`30s`).
+- **Widget shows nothing for a parent station** - Confirm by querying the API: if the parent's `departures[]` is empty but `children[]` contains stops with `departures`, the widget should already be walking them. If you see no children either, you may have the wrong Onestop ID.
+- **Both directions appear under the wrong headsign** - `direction_id` 0 vs 1 has no inherent meaning in GTFS; it's whatever the agency chose. The headsign labels are taken from the first matching departure in each direction, so they should always read correctly even if the underlying ID is "swapped" relative to other agencies.
+- **Real-time countdown is dim even though the agency has GTFS-RT** - The widget treats a departure as real-time only when `estimated_utc != scheduled_utc`. Verified-on-time buses look identical to scheduled-only ones in the API, so they appear as scheduled.
+- **`context deadline exceeded (Client.Timeout exceeded while awaiting headers)`** - Glance's HTTP client has a hard-coded 5s timeout (`defaultClientTimeout` in `widget-utils.go`) and there is no config option to raise it, while Transitland's response for parent stations with many children + alerts can take 2–4s. If you hit the limit, shrink the response instead: lower `limit`, lower `next`, drop `include_alerts`, or point `TRANSITLAND_STOP_KEY` at a single child platform rather than the parent station.
 
 ## Glance compatibility
 
-Tested on Glance **v0.8.4**. Uses `define`/`template`, `sortByString`, and the math helpers `add` / `sub` / `div`. If you're on an older release and the widget renders nothing or shows a parsing error, upgrade Glance.
+Tested on Glance **v0.8.6**. Uses `define`/`template`, `sortByString`, `findMatch`, `safeCSS`, `absInt` and the math helpers `add` / `sub` / `div`. If you're on an older release and the widget renders nothing or shows a parsing error, upgrade Glance.
