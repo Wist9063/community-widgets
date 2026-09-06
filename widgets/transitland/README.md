@@ -6,25 +6,23 @@ Live transit departures at any stop, powered by the [Transitland](https://www.tr
 
 The widget adapts to whatever the API returns. A few common scenarios:
 
+| Filtered to one line | Unfiltered | Service alert |
+| --- | --- | --- |
+|<img src='./preview.png' alt='Widget filtered to one line, showing both directions split into sub-lists' width="200"/> | <img src='./preview-unfiltered.png' alt='Widget without route filter, showing multiple routes mixed together' width="200"/> | <img src='./preview-servicealert.png' alt='Widget with a service alert badge in the header' width="200"/> |
+
 ### Filtered to a single line (multi-direction)
 
 Both directions appear in their own sub-list with a `→ destination` header. Each sub-list collapses independently. The direction with the sooner next train always renders on top.
-
-<img src='./preview.png' alt='Widget filtered to one line, showing both directions split into sub-lists' width="200"/>
 
 ### Unfiltered - multiple routes at one stop
 
 Each (route, direction) combination gets up to 2 rows showing its soonest departures (tweakable via `$perRouteCap` in the template). Within a single platform, sorted by next departure. 
 
-For parent stations with multiple child platforms (BART, NYC subway, etc.) ordering is approximate across platforms because Glance's template language has no list-merge primitive.
-
-<img src='./preview-unfiltered.png' alt='Widget without route filter, showing multiple routes mixed together' width="200"/>
+*For parent stations with multiple child platforms (BART, NYC subway, etc.) ordering is approximate across platforms because Glance's template language has no list-merge primitive.*
 
 ### Service alert active
 
 A `!` badge appears next to the stop name (`var(--color-primary)` for `DETOUR`/`MODIFIED_SERVICE`, `var(--color-negative)` for `NO_SERVICE`/`SIGNIFICANT_DELAYS`). Hover for the full alert description.
-
-<img src='./preview-servicealert.png' alt='Widget with a service alert badge in the header' width="200"/>
 
 Features:
 
@@ -204,6 +202,23 @@ Leave the variable empty (or omit it) to show all routes at the stop in one comb
     {{ if not $any }}<p class="color-subdue">No upcoming departures</p>{{ end }}
 ```
 
+### .env
+
+```
+# Transitland API (https://www.transit.land/documentation) key
+# Free key at https://www.transit.land/operators (click "API access").
+TRANSITLAND_API_KEY=
+
+# Onestop ID for the stop/station. Find via the /api/v2/rest/stops?lat=..&lon=..&radius=300 endpoint
+# (e.g. "s-9q9k659jh1-broadway~laurel": the single-quoted dash-separated). Should always start with s.
+TRANSITLAND_STOP_KEY=
+
+# OPTIONAL: route Onestop ID to filter to a single line. Useful at multi-line stations
+# like BART's Embarcadero. Find by inspecting the /departures response. Each route has
+# `trip.route.onestop_id` (e.g. "r-9q9-yellow"). Leave empty to show all routes. Should always start with r.
+TRANSITLAND_ROUTE_ONESTOP_ID=
+```
+
 ## Reading the widget
 
 Example: filtered to the SFMTA N-Judah Muni Metro line at Embarcadero station.
@@ -263,7 +278,6 @@ Santa Cruz METRO
 - **Widget shows nothing for a parent station** - Confirm by querying the API: if the parent's `departures[]` is empty but `children[]` contains stops with `departures`, the widget should already be walking them. If you see no children either, you may have the wrong Onestop ID.
 - **Both directions appear under the wrong headsign** - `direction_id` 0 vs 1 has no inherent meaning in GTFS; it's whatever the agency chose. The headsign labels are taken from the first matching departure in each direction, so they should always read correctly even if the underlying ID is "swapped" relative to other agencies.
 - **Real-time countdown is dim even though the agency has GTFS-RT** - The widget treats a departure as real-time only when `estimated_utc != scheduled_utc`. Verified-on-time buses look identical to scheduled-only ones in the API, so they appear as scheduled.
-- **`context deadline exceeded (Client.Timeout exceeded while awaiting headers)`** - Glance's HTTP client has a hard-coded 5s timeout (`defaultClientTimeout` in `widget-utils.go`) and there is no config option to raise it, while Transitland's response for parent stations with many children + alerts can take 2–4s. If you hit the limit, shrink the response instead: lower `limit`, lower `next`, drop `include_alerts`, or point `TRANSITLAND_STOP_KEY` at a single child platform rather than the parent station.
 
 ## Glance compatibility
 
